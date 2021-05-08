@@ -10,9 +10,6 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       home: HomePage(),
-      routes: {
-        'favorites': (_) => FavoritePage(),
-      },
     );
   }
 }
@@ -23,14 +20,8 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  Future<List<Nft>>? _nftsFuture;
+  final List<Nft> _nfts = _decodeNfts(_jsonNfts);
   final _favourites = <Nft>{};
-
-  @override
-  void initState() {
-    super.initState();
-    _nftsFuture = _fetchNfts();
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -40,124 +31,92 @@ class _HomePageState extends State<HomePage> {
           IconButton(icon: Icon(Icons.list), onPressed: _goToFavourites),
         ],
       ),
-      // Gets a snapshot of the future and builds a widget.
-      // The snapshot includes information about the future such its connection
-      // state and the error or data returned.
-      body: FutureBuilder<List<Nft>>(
-        future: _nftsFuture,
-        builder: (context, snapshot) {
-          // Returns a progress indicator if the future has not completed.
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return Center(child: CircularProgressIndicator());
-          }
-          // Else assume no errors.
-          // Pass the data from the snapshot to build the nft list.
-          return _buildNftList(snapshot.data!);
-        },
-      ),
+      body: _buildNftList(),
     );
   }
 
   // Navigates to the favorite route.
   void _goToFavourites() {
-    Navigator.of(context).pushNamed('favorites', arguments: _favourites);
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) {
+          final tiles = _favourites.map(
+            (Nft nft) => ListTile(
+              title: Text(
+                nft.name!,
+                style: const TextStyle(fontSize: 18),
+              ),
+            ),
+          );
+
+          return Scaffold(
+            appBar: AppBar(title: Text('Favorites')),
+            body: tiles.isEmpty
+                ? Container()
+                : ListView(
+                    children:
+                        ListTile.divideTiles(context: context, tiles: tiles)
+                            .toList(),
+                  ),
+          );
+        },
+      ),
+    );
   }
 
   // Creates a scrollable list.
-  Widget _buildNftList(List<Nft> nfts) {
+  Widget _buildNftList() {
     return ListView.builder(
       padding: const EdgeInsets.all(16),
-      // The itemBuilder callback is called once for each item in the list.
-      itemBuilder: (BuildContext _context, int index) => _buildRow(nfts[index]),
-      itemCount: nfts.length,
+      // The itemBuilder callback is called once for each item in the list
+      itemBuilder: (BuildContext _context, int index) =>
+          _buildRow(_nfts[index]),
+      itemCount: _nfts.length,
     );
   }
 
   Widget _buildRow(Nft nft) {
     final isSaved = _favourites.contains(nft);
+    // TODO: Create the layout for the card.
     return Column(
       children: [
-        Stack(
-          children: [
-            Image.network(nft.asset!),
-            Positioned(
-              top: 20,
-              right: 20,
-              child: Container(
-                color: Colors.blue[700],
-                padding: const EdgeInsets.all(8),
-                child: Text(
-                  nft.coin!,
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
-                ),
-              ),
+        Image.network(nft.asset!),
+        // "ETH" tag on the top right
+        Container(
+          color: Colors.blue[700],
+          padding: const EdgeInsets.all(8),
+          child: Text(
+            nft.coin!,
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
             ),
-          ],
+          ),
         ),
-        Row(
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    nft.name!,
-                    style: TextStyle(fontSize: 24, fontWeight: FontWeight.w500),
-                  ),
-                  Text(
-                    nft.price!,
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w400),
-                  ),
-                ],
-              ),
-            ),
-            GestureDetector(
-              child: Icon(
-                isSaved ? Icons.favorite : Icons.favorite_border,
-                color: isSaved ? Colors.red : Colors.grey,
-                size: 30,
-              ),
-              onTap: () {
-                setState(() {
-                  if (isSaved) {
-                    _favourites.remove(nft);
-                  } else {
-                    _favourites.add(nft);
-                  }
-                });
-              },
-            ),
-          ],
+        Text(
+          nft.name!,
+          style: TextStyle(fontSize: 24, fontWeight: FontWeight.w500),
+        ),
+        Text(
+          nft.price!,
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.w400),
+        ),
+        GestureDetector(
+          child: Icon(
+            isSaved ? Icons.favorite : Icons.favorite_border,
+            color: isSaved ? Colors.red : Colors.grey,
+            size: 30,
+          ),
+          // TODO: Fix the `onTap` function.
+          onTap: () {
+            if (isSaved) {
+              _favourites.remove(nft);
+            } else {
+              _favourites.add(nft);
+            }
+          },
         ),
       ],
-    );
-  }
-}
-
-class FavoritePage extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    final saved = ModalRoute.of(context)?.settings.arguments as Set<Nft>;
-    final tiles = saved.map(
-      (Nft nft) => ListTile(
-        title: Text(
-          nft.name!,
-          style: const TextStyle(fontSize: 18),
-        ),
-      ),
-    );
-
-    return Scaffold(
-      appBar: AppBar(title: Text('Favorites')),
-      body: tiles.isEmpty
-          ? Container()
-          : ListView(
-              children:
-                  ListTile.divideTiles(context: context, tiles: tiles).toList(),
-            ),
     );
   }
 }
