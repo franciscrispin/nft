@@ -20,7 +20,8 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  final List<Nft> _nfts = _decodeNfts(_jsonNfts);
+  // TODO: Change the _nfts type to an appropriate type.
+  List<Nft>? _nfts;
   final _favourites = <Nft>{};
 
   @override
@@ -31,7 +32,22 @@ class _HomePageState extends State<HomePage> {
           IconButton(icon: Icon(Icons.list), onPressed: _goToFavourites),
         ],
       ),
-      body: _buildNftList(),
+      // Gets a snapshot of the future and builds a widget.
+      // The snapshot includes information about the future such its connection
+      // state and the error or data returned.
+      // TODO: Fix me.
+      body: FutureBuilder<List<Nft>>(
+        future: _fetchNfts(),
+        builder: (context, snapshot) {
+          // Return a progress indicator if the future has not completed.
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return Center(child: CircularProgressIndicator());
+          }
+          // Else assume no errors.
+          // Pass the data from the snapshot to build the nft list.
+          return _buildNftList(snapshot.data!);
+        },
+      ),
     );
   }
 
@@ -65,56 +81,73 @@ class _HomePageState extends State<HomePage> {
   }
 
   // Creates a scrollable list.
-  Widget _buildNftList() {
+  Widget _buildNftList(List<Nft> nfts) {
     return ListView.builder(
       padding: const EdgeInsets.all(16),
       // The itemBuilder callback is called once for each item in the list
-      itemBuilder: (BuildContext _context, int index) =>
-          _buildRow(_nfts[index]),
-      itemCount: _nfts.length,
+      itemBuilder: (BuildContext _context, int index) => _buildRow(nfts[index]),
+      itemCount: nfts.length,
     );
   }
 
   Widget _buildRow(Nft nft) {
     final isSaved = _favourites.contains(nft);
-    // TODO: Create the layout for the card.
     return Column(
       children: [
-        Image.network(nft.asset!),
-        // "ETH" tag on the top right
-        Container(
-          color: Colors.blue[700],
-          padding: const EdgeInsets.all(8),
-          child: Text(
-            nft.coin!,
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
+        Stack(
+          children: [
+            Image.network(nft.asset!),
+            Positioned(
+              top: 20,
+              right: 20,
+              child: Container(
+                color: Colors.blue[700],
+                padding: const EdgeInsets.all(8),
+                child: Text(
+                  nft.coin!,
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
             ),
-          ),
+          ],
         ),
-        Text(
-          nft.name!,
-          style: TextStyle(fontSize: 24, fontWeight: FontWeight.w500),
-        ),
-        Text(
-          nft.price!,
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.w400),
-        ),
-        GestureDetector(
-          child: Icon(
-            isSaved ? Icons.favorite : Icons.favorite_border,
-            color: isSaved ? Colors.red : Colors.grey,
-            size: 30,
-          ),
-          // TODO: Fix the `onTap` function.
-          onTap: () {
-            if (isSaved) {
-              _favourites.remove(nft);
-            } else {
-              _favourites.add(nft);
-            }
-          },
+        Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    nft.name!,
+                    style: TextStyle(fontSize: 24, fontWeight: FontWeight.w500),
+                  ),
+                  Text(
+                    nft.price!,
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w400),
+                  ),
+                ],
+              ),
+            ),
+            GestureDetector(
+              child: Icon(
+                isSaved ? Icons.favorite : Icons.favorite_border,
+                color: isSaved ? Colors.red : Colors.grey,
+                size: 30,
+              ),
+              onTap: () {
+                setState(() {
+                  if (isSaved) {
+                    _favourites.remove(nft);
+                  } else {
+                    _favourites.add(nft);
+                  }
+                });
+              },
+            ),
+          ],
         ),
       ],
     );
