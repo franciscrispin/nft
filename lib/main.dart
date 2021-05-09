@@ -20,9 +20,14 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  // TODO: Change the _nfts type to an appropriate type.
-  List<Nft>? _nfts;
+  Future<List<Nft>>? _nftsFuture;
   final _favourites = <Nft>{};
+
+  @override
+  void initState() {
+    super.initState();
+    _nftsFuture = _fetchNfts();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -35,9 +40,8 @@ class _HomePageState extends State<HomePage> {
       // Gets a snapshot of the future and builds a widget.
       // The snapshot includes information about the future such its connection
       // state and the error or data returned.
-      // TODO: Fix me.
       body: FutureBuilder<List<Nft>>(
-        future: _fetchNfts(),
+        future: _nftsFuture,
         builder: (context, snapshot) {
           // Return a progress indicator if the future has not completed.
           if (snapshot.connectionState == ConnectionState.waiting) {
