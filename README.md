@@ -1,6 +1,6 @@
-# NFT project
+# Flutter Knowledge Sharing
 
-View and save reasonably priced nfts.
+Create a flutter app to view and save reasonably priced nfts.
 
 ![Demo](assets/nft-demo.gif)
 
